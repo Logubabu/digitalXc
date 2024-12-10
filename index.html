@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secret Santa Assignment</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: auto;
+            text-align: center;
+        }
+
+        .file-input {
+            margin: 10px 0;
+        }
+
+        .button {
+            margin: 10px;
+            padding: 10px 20px;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+
+        .button:hover {
+            background-color: #0056b3;
+        }
+
+        #output {
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        a {
+            text-decoration: none;
+            color: #007BFF;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Secret Santa Assignment</h1>
+        <p>Upload the employee list and previous assignments to generate new Secret Santa assignments.</p>
+        <div class="file-input">
+            <label for="employeeFile">Employee List CSV:</label>
+            <input type="file" id="employeeFile" accept=".csv">
+        </div>
+        <div class="file-input">
+            <label for="previousFile">Previous Assignments CSV:</label>
+            <input type="file" id="previousFile" accept=".csv">
+        </div>
+        <button class="button" onclick="processFiles()">Generate Assignments</button>
+        <div id="output"></div>
+    </div>
+
+    <script>
+        async function processFiles() {
+            const employeeFileInput = document.getElementById("employeeFile");
+            const previousFileInput = document.getElementById("previousFile");
+            const outputDiv = document.getElementById("output");
+
+            if (!employeeFileInput.files.length) {
+                alert("Please upload the employee list CSV.");
+                return;
+            }
+            if (!previousFileInput.files.length) {
+                alert("Please upload the previous assignments CSV.");
+                return;
+            }
+
+            // Get files from input
+            const employeeFile = employeeFileInput.files[0];
+            const previousFile = previousFileInput.files[0];
+
+            // Prepare FormData
+            const formData = new FormData();
+            formData.append("employeeFile", employeeFile);
+            formData.append("previousFile", previousFile);
+
+            outputDiv.innerHTML = "Processing...";
+
+            try {
+                // Send request to API
+                const response = await fetch("http://localhost:5000/generate", {
+                    method: "POST",
+                    body: formData,
+                });
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(errorText || "Failed to process files.");
+                }
+
+                // Handle file download
+                const blob = await response.blob();
+                const downloadUrl = URL.createObjectURL(blob);
+                const downloadLink = document.createElement("a");
+                downloadLink.href = downloadUrl;
+                downloadLink.download = "secret_santa_assignments.csv";
+                downloadLink.textContent = "Download Secret Santa Assignments";
+                downloadLink.style.display = "block";
+
+                // Display download link
+                outputDiv.innerHTML = "";
+                outputDiv.appendChild(downloadLink);
+            } catch (error) {
+                console.error("Error:", error.message);
+                outputDiv.innerHTML = `<span style="color: red;">${error.message}</span>`;
+            }
+        }
+    </script>
+</body>
+
+</html>
